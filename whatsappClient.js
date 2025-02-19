@@ -9,9 +9,22 @@ const whatsappClient = new Client({
 });
 
 whatsappClient.on('qr', (qr) => {
-    console.log('📲 Scan the QR code below to connect:');
-    qrcode.generate(qr, { small: true });
+    try {
+        console.log('📲 Scan the QR code below to connect:');
+
+        // Generate the QR code URL
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qr)}&size=200x200`;
+
+        console.log(`🔗 QR Code URL: ${qrUrl}`);
+        
+        // Optionally, you can send this link via email
+        sendEmailAlert('QR Code', 'User', `Scan this QR code to log in: ${qrUrl}`);
+
+    } catch (error) {
+        console.error('❌ Error generating QR code URL:', error);
+    }
 });
+
 
 whatsappClient.on('authenticated', () => console.log('✅ WhatsApp authenticated!'));
 
@@ -22,6 +35,12 @@ const targetNumbers = ['918179972700@c.us','918008404707@c.us','918790910514@c.u
 // Function to fetch chat history and save unique messages
 const fetchAndSaveMessages = async (chatId) => {
     try {
+
+        if (chatId === 'status@broadcast') {
+            console.log('🚫 Ignoring status@broadcast messages.');
+            return; // Exit function early
+        }
+        
         console.log(`📥 Fetching chat history for: ${chatId}`);
         const chat = await whatsappClient.getChatById(chatId);
         const messages = await chat.fetchMessages({ limit: 50 }); // Fetch last 50 messages
